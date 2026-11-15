@@ -32,7 +32,7 @@ Andere Zählertypen sind nicht getestet. Die Feldnamen der Sensoren (`total_ener
 
 - Heltec WiFi LoRa 32 V4.3 mit angeschlossener Antenne.
 - Ein wMBus-Zähler und dessen **AES-Schlüssel** (den bekommst du in der Regel von deinem Netzbetreiber).
-- Das Telegramm des Zählers muss **Zählerstand und Zählerzeit** (`device_date_time`) enthalten. Ohne Zählerzeit funktioniert die Berechnung des Maximums nicht. Bei den meisten Zählern lässt sich die Ausgabeliste erweitern.
+- Das Telegramm des Zählers muss **Zählerstand und Zählerzeit** (`device_date_time`) enthalten. Ohne Zählerzeit funktioniert die Berechnung des Maximums nicht.
 - ESPHome (Dashboard oder Kommandozeile).
 
 ## Belegung des Boards
