@@ -141,7 +141,7 @@ Einstellungen:
 - Der AES-Schlüssel liegt im Klartext im Flash des Geräts. Bei Geräten in fremder Hand solltest du die Flash-Verschlüsselung prüfen.
 - Das Web-Interface hat standardmäßig keinen Login. Setze `auth:` mit Benutzer und Passwort.
 - OTA-Updates sollten ein Passwort haben. Ohne Home Assistant kannst du zusätzlich `ota: - platform: web_server` verwenden.
-- Veröffentliche niemals `secrets.yaml`, den API-Key oder den AES-Schlüssel. Prüfe auch die Git-Historie.
+- Veröffentliche niemals `secrets.yaml`, den API-Key oder den AES-Schlüssel.
 
 ## Hinweise zur Wartung
 
