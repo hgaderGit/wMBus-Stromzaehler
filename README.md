@@ -49,7 +49,7 @@ Die Belegung des Front-Ends und der Display-Versorgung stammt aus Community-Quel
 
 ## Einrichtung
 
-1. **Secrets anlegen.** Kopiere `secrets.yaml.example` nach `secrets.yaml` und trage ein: `wifi_ssid`, `wifi_password`, `mqtt_user`, `mqtt_password` und `wmbus_key` (32 Hex-Zeichen). Den API-Key erzeugst du neu, am besten mit `openssl rand -base64 32`.
+1. **Secrets anlegen.** `secrets.yaml` entsprechend `secrets.yaml.example` erweitern: `wifi_ssid`, `wifi_password`, `mqtt_user`, `mqtt_password` und `wmbus_key` (32 Hex-Zeichen). Den API-Key erzeugst du neu, am besten mit `openssl rand -base64 32`.
 2. **Substitutionen anpassen.** Am Anfang der YAML stehen `mqtt_broker`, `mqtt_topic`, `zaehler_id`, `max_luecke_s` und `min_laufend_s`.
 3. **Zählernummer ermitteln.** Kennst du die Nummer nicht, lass `0x00000000` stehen und setze das Log-Level kurz auf `WARN`. Im Log erscheint eine Meldung der Form `Check if telegram with address 00123456 can be parsed on ...`. Die Adresse ist die Zählernummer (hexadezimal, in der YAML mit `0x` davor).
 4. **Flashen.** Beim ersten Mal per USB-Kabel, später per OTA.
