@@ -58,7 +58,8 @@ ota:
 
 web_server:
   version: 3
-      
+  
+    
 mqtt:
   broker: ${mqtt_broker}
   username: !secret mqtt_user
@@ -86,7 +87,19 @@ globals:
   - {id: max_monat,  type: int,         initial_value: '0', restore_value: true}   
   - {id: max_w,      type: float,       initial_value: '0', restore_value: true}
   - {id: mon_prev,   type: int,         initial_value: '0'}
-  - {id: max_ts,     type: uint32_t,    initial_value: '0', restore_value: true}    
+  - {id: max_ts,     type: uint32_t,    initial_value: '0', restore_value: true}
+  # Plausibilitätsprüfung der Zählerstände (Bezug und Einspeisung), -1 = unbekannt
+  - {id: e_ok,       type: double,      initial_value: '-1'}
+  - {id: e_ok_ms,    type: uint32_t,    initial_value: '0'}
+  - {id: e_cand,     type: double,      initial_value: '-1'}
+  - {id: e_cand_ms,  type: uint32_t,    initial_value: '0'}
+  - {id: g_ok,       type: double,      initial_value: '-1'}
+  - {id: g_ok_ms,    type: uint32_t,    initial_value: '0'}
+  - {id: g_cand,     type: double,      initial_value: '-1'}
+  - {id: g_cand_ms,  type: uint32_t,    initial_value: '0'}
+  # Zeitpunkt des Eintreffens, damit nur Werte desselben Telegramms gepaart werden
+  - {id: e_ms,       type: uint32_t,    initial_value: '0'}
+  - {id: t_ms,       type: uint32_t,    initial_value: '0'}    
   
 # ---------------------------------------------------------------
 # Front-End-Steuerung des Heltec V4 (zusätzlich zum SX1262)
@@ -166,7 +179,6 @@ sensor:
     state_class: measurement
     filters:
       - multiply: 1000
-      
 
   - platform: wmbus_meter
     parent_id: stromzaehler
@@ -178,13 +190,29 @@ sensor:
     unit_of_measurement: "kWh"
     state_class: total_increasing
     filters:
-      - delta:
-          max_value: 1.0
+      # Plausibilitätsfilter: erlaubter Anstieg wächst mit der Zeit (max. 50 kW), siehe README
       - lambda: |-
-          if (id(gesamteinspeisung).has_state() && x < id(gesamteinspeisung).state) {
-            return {};
+          const double P_MAX_KW = 50.0;   // höchste plausible Leistung
+          const double TOL = 0.05;        // kWh Reserve
+          uint32_t jetzt = millis();
+          if (id(g_ok) >= 0) {
+            double dt_h = (uint32_t)(jetzt - id(g_ok_ms)) / 3600000.0;
+            double d = x - id(g_ok);
+            if (d >= -0.001 && d <= TOL + P_MAX_KW * dt_h) {
+              id(g_ok) = x; id(g_ok_ms) = jetzt; id(g_cand) = -1;
+              return x;
+            }
           }
-          return x;
+          // unplausibel oder noch ohne Basis: erst übernehmen, wenn der nächste Wert dazu passt
+          if (id(g_cand) >= 0) {
+            double dtc = (uint32_t)(jetzt - id(g_cand_ms)) / 3600000.0;
+            if (fabs(x - id(g_cand)) <= TOL + P_MAX_KW * dtc) {
+              id(g_ok) = x; id(g_ok_ms) = jetzt; id(g_cand) = -1;
+              return x;
+            }
+          }
+          id(g_cand) = x; id(g_cand_ms) = jetzt;
+          return {};
               
   - platform: wmbus_meter
     parent_id: stromzaehler
@@ -196,19 +224,36 @@ sensor:
     unit_of_measurement: "kWh"
     state_class: total_increasing
     filters:
-      - delta:
-          max_value: 1.0
+      # Plausibilitätsfilter: erlaubter Anstieg wächst mit der Zeit (max. 50 kW), siehe README
       - lambda: |-
-          if (id(gesamtverbrauch).has_state() && x < id(gesamtverbrauch).state) {
-            return {};
+          const double P_MAX_KW = 50.0;   // höchste plausible Leistung
+          const double TOL = 0.05;        // kWh Reserve
+          uint32_t jetzt = millis();
+          if (id(e_ok) >= 0) {
+            double dt_h = (uint32_t)(jetzt - id(e_ok_ms)) / 3600000.0;
+            double d = x - id(e_ok);
+            if (d >= -0.001 && d <= TOL + P_MAX_KW * dt_h) {
+              id(e_ok) = x; id(e_ok_ms) = jetzt; id(e_cand) = -1;
+              return x;
+            }
           }
-          return x;     
+          // unplausibel oder noch ohne Basis: erst übernehmen, wenn der nächste Wert dazu passt
+          if (id(e_cand) >= 0) {
+            double dtc = (uint32_t)(jetzt - id(e_cand_ms)) / 3600000.0;
+            if (fabs(x - id(e_cand)) <= TOL + P_MAX_KW * dtc) {
+              id(e_ok) = x; id(e_ok_ms) = jetzt; id(e_cand) = -1;
+              return x;
+            }
+          }
+          id(e_cand) = x; id(e_cand_ms) = jetzt;
+          return {};
     on_value:
       then:
         - lambda: id(telegram_nr)++;
         - lambda: |-
             id(e_cur) = round(x * 1000.0);
             id(e_new) = true;
+            id(e_ms) = millis();
         - script.execute: auswerten          
         - mqtt.publish:
             topic: ${mqtt_topic}
@@ -288,7 +333,45 @@ text_sensor:
         - lambda: |-
             id(t_str) = x;
             id(t_new) = true;
+            id(t_ms) = millis();
         - script.execute: auswerten       
+
+number:
+  - platform: template
+    id: sync_max_slider
+    name: "Vorgabe Monatsmaximum (1.6.0)"
+    icon: "mdi:tune"
+    unit_of_measurement: "W"
+    min_value: 0
+    max_value: 25000
+    step: 1
+    mode: slider
+    optimistic: true
+    initial_value: 0
+
+button:
+  - platform: template
+    name: "Sync max"
+    icon: "mdi:sync"
+    on_press:
+      - lambda: |-
+          float neuer_wert = id(sync_max_slider).state;
+          id(max_w) = neuer_wert;
+          
+          // Stellt sicher, dass der aktuelle Monat als aktiv gilt und nicht beim nächsten Takt überschrieben wird
+          if (id(mon_prev) > 0) {
+            id(max_monat) = id(mon_prev);
+          }
+          // Setzt den Zeitstempel auf die letzte bekannte Zählerzeit (falls vorhanden)
+          if (id(t_prev) > 0) {
+            id(max_ts) = (uint32_t) id(t_prev);
+          }
+          
+          // Aktualisiert den Sensor in Home Assistant sofort
+          id(p_max).publish_state(neuer_wert);
+      - logger.log:
+          format: "Monatsmaximum (1.6.0) erfolgreich auf %.0f W synchronisiert!"
+          args: [ 'id(max_w)' ]
 
           
 i2c:
@@ -319,7 +402,7 @@ display:
       if (id(aktuelle_leistung).has_state())
         it.printf(0, 24, id(font_klein), "1.7.0:   %.0f W", id(aktuelle_leistung).state);
       else
-        it.print(0, 24, id(font_klein), " --");        
+        it.print(0, 24, id(font_klein), " --");
       if (id(p_max).has_state())
         it.printf(0, 36, id(font_klein), "1.6.0:   %.0f W", id(p_max).state);
       else
@@ -327,7 +410,7 @@ display:
       if (id(p_laufend).has_state())
         it.printf(0, 48, id(font_klein), "1.4.0:   %.0f W", id(p_laufend).state);
       else
-        it.print(0, 48, id(font_klein), " --");        
+        it.print(0, 48, id(font_klein), " --");
 
 script:
   - id: auswerten
@@ -335,6 +418,13 @@ script:
     then:
       - lambda: |-
           if (!(id(e_new) && id(t_new))) return;
+          // nur Werte aus demselben Telegramm paaren
+          int32_t diff = (int32_t)(id(e_ms) - id(t_ms));
+          if (diff > 200 || diff < -200) {
+            if (diff > 0) id(t_new) = false;   // Zeit ist älter
+            else id(e_new) = false;            // Zählerstand ist älter
+            return;
+          }
           id(e_new) = false;
           id(t_new) = false;
 
@@ -360,7 +450,7 @@ script:
             double eb = ep + (e - ep) * (double)(tb - tp) / (double)(t - tp);
             if (tb - id(ref_t) == 900) {
               float p = (float)((eb - id(ref_e)) * 4.0);
-              if (p >= 0) {
+              if (p >= 0 && p <= 60000) {
                 id(p_viertel).publish_state(p);
                 int monat = id(mon_prev);
                 if (monat != id(max_monat) || p > id(max_w)) {
