@@ -11,9 +11,11 @@ ESPHome-Konfiguration, die die verschlüsselten wMBus-Telegramme eines Stromzäh
 
 Die Lösung läuft mit Home Assistant, mit Home Assistant und MQTT sowie ganz ohne Home Assistant nur mit MQTT.
 
+Hintergrund (Österreich / ElWG & SNE-G-V): Mit der Reform der Netzentgelte in Österreich (geregelt durch das ElWG und die Systemnutzungsentgelte-Grundsatzverordnung SNE-G-V der E-Control) wird zwischen 2027 und 2028 schrittweise ein Leistungspreis für Haushalte eingeführt. Bemessungsgrundlage für den monatlichen Leistungspreis ist der höchste durchschnittliche 15-Minuten-Leistungswert (Viertelstundenmaximum) eines Kalendermonats. Diese ESPHome-Komponente berechnet genau diese Intervalle lokal in Echtzeit, um Lastspitzen rechtzeitig zu erkennen und Verbraucher (wie Wallbox oder Wärmepumpe) im Smart Home gezielt zu steuern.
+
 ## Wichtiger Hinweis
 
-> Dies ist ein Community-Projekt und **keine offizielle Lösung** eines Netzbetreibers oder Zählerherstellers.
+> Dies ist ein Hobby-Projekt und **keine offizielle Lösung** eines Netzbetreibers oder Zählerherstellers.
 > Die Bereitstellung erfolgt **ohne Gewähr**. Die Nutzung geschieht auf **eigene Verantwortung**.
 > Die berechneten Leistungswerte sind **Näherungswerte** und keine Abrechnungsgrößen.
 > Maßgeblich sind immer die Daten des Netzbetreibers.
