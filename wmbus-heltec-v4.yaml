@@ -321,7 +321,10 @@ sensor:
     device_class: power
     state_class: measurement
     accuracy_decimals: 0
-
+    filters:
+      - exponential_moving_average:
+          alpha: 0.05
+          send_every: 1
       
 text_sensor:
   - platform: wmbus_meter
