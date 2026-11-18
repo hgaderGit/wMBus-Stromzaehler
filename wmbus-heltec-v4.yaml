@@ -292,6 +292,7 @@ sensor:
     parent_id: stromzaehler
     id: empfangsstaerke
     field: rssi_dbm
+    unit_of_measurement: "dBm"
     name: "Stromzähler Empfangsstärke"
 
   - platform: template
