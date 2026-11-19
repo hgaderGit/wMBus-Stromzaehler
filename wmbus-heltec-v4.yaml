@@ -25,9 +25,9 @@ esphome:
       - output.turn_off: fem_tx     # GPIO46: LOW = Empfang (CTX)
 
 external_components:
-  - source: github://SzczepanLeon/esphome-components@56abb0055e24bb247c5d3a2a45c9140226e01ac0
+  - source: github://SzczepanLeon/esphome-components@pull/476/head
     components: [wmbus_radio, wmbus_meter, wmbus_common]
-    refresh: never
+    refresh: 0s
 
 esp32:
   # Die V4 nutzt dieselbe Board-Definition wie die V3 (ESP32-S3)
