@@ -25,9 +25,9 @@ Hintergrund (Österreich / ElWG & SNE-G-V): Mit der Reform der Netzentgelte in �
 | Komponente | Stand |
 |---|---|
 | Board | Heltec WiFi LoRa 32 V4.3 (HTIT-WB32LAF) |
-| ESPHome | 2026.10.2 |
+| ESPHome | 2026.11.0 |
 | Zähler | NES 833334 wMBus-Zähler mit dem Treiber `amiplus` der wmbusmeters, Modus T1 |
-| wMBus-Komponente | [SzczepanLeon/esphome-components](https://github.com/SzczepanLeon/esphome-components), Commit `56abb0055e24bb247c5d3a2a45c9140226e01ac0` |
+| wMBus-Komponente | [SzczepanLeon/esphome-components](https://github.com/SzczepanLeon/esphome-components), Derzeit für ESPHome 2026.11.0 Pull Request #476 notwendig !|
 
 Andere Zählertypen sind nicht getestet. Die Feldnamen der Sensoren (`total_energy_consumption_kwh` usw.) gelten für den Treiber `amiplus` und können bei anderen Treibern anders heißen.
 
@@ -189,9 +189,6 @@ Der Button setzt das Monatsmaximum auf den Wert des Sliders, ordnet es dem aktue
 - OTA-Updates sollten ein Passwort haben. Ohne Home Assistant kannst du zusätzlich `ota: - platform: web_server` verwenden.
 - Veröffentliche niemals `secrets.yaml`, den API-Key oder den AES-Schlüssel.
 
-## Hinweise zur Wartung
-
-- Die externe Komponente ist auf einen Commit festgenagelt (`refresh: never`). Aktualisiere sie bewusst und teste danach, denn neuere Stände können mit der ESPHome-Version brechen.
 
 ## Lizenz
 
